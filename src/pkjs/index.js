@@ -237,6 +237,15 @@ Pebble.addEventListener('webviewclosed', function (e) {
   }
   if (result.action === 'disconnect') {
     strava.disconnect(sendSettings);
+  } else if (result.settings && result.settings.refreshToken) {
+    strava.connectWithRefreshToken(result.settings.refreshToken, function (err, tokens) {
+      if (err) {
+        notify('Strava', err.message);
+      } else {
+        notify('Strava', 'Connected' + (tokens.athlete ? ' as ' + tokens.athlete : '') + '.');
+      }
+      sendSettings();
+    });
   } else {
     sendSettings();
   }

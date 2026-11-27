@@ -61,6 +61,10 @@ Open the Pebble app → **Workout to Strava** → Settings:
 2. Open the settings again and tap **Connect with Strava**. Log in with email and
    password (Google or Apple sign-in may not work inside the settings page) and
    allow the app to upload activities.
+   If the login page fails inside the Pebble app, open **Or paste a refresh token**
+   instead and paste a `refresh_token` you created yourself with `curl`
+   (authorize with `scope=activity:write,activity:read_all`, then exchange the code
+   at `https://www.strava.com/oauth/token`).
 3. Choose your **favorite sport types** and their order, and a **default** for
    each Pebble workout type (for example Open Workout → Weight Training). Tap **Save**.
 
@@ -78,6 +82,9 @@ Heart rate is one reading per minute, because that is what Pebble Health stores,
 so the Strava chart is smoother than a chest strap's.
 
 ## Notes
+
+- Strava only serves API apps whose owner has an active Strava subscription.
+  Without one, every request fails with `403 Application Status Inactive`.
 
 - Runs and walks that the watch detected on its own also appear in the list,
   because Pebble Health reports them the same way as workouts.

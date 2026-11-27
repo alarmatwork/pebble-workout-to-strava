@@ -2,7 +2,8 @@
 // self-contained data: URL; it returns its result through pebblejs://close.
 //
 // Result actions:
-//   { action: 'save', settings }        save favorites, defaults and API details
+//   { action: 'save', settings }        save favorites, defaults and API details;
+//                                       settings.refreshToken (optional) connects Strava
 //   { action: 'disconnect', settings }  save, then disconnect Strava
 // Connecting navigates to Strava; the hosted callback page
 // (docs/strava-callback.html) closes the page with { action: 'oauth', code, state, ... }.
@@ -90,6 +91,8 @@ var PAGE_SCRIPT = function () {
     };
     var secret = $('client-secret').value.trim();
     if (secret) settings.clientSecret = secret;
+    var refreshToken = $('refresh-token') ? $('refresh-token').value.trim() : '';
+    if (refreshToken) settings.refreshToken = refreshToken;
     return settings;
   }
 
@@ -195,7 +198,13 @@ function build(options) {
     : '<p>Not connected.</p>' +
       '<button type="button" class="primary" id="connect">Connect with Strava</button>' +
       '<p class="muted" id="connect-hint"></p>' +
-      '<p class="muted">Use email and password to sign in; Google and Apple sign-in may not work inside this page.</p>';
+      '<p class="muted">Use email and password to sign in; Google and Apple sign-in may not work inside this page.</p>' +
+      '<details id="manual"><summary>Or paste a refresh token</summary>' +
+      '<p class="muted">If the login above fails, create a token with upload access yourself ' +
+      '(see the README) and paste its <code>refresh_token</code> here, then tap Save. ' +
+      'It must belong to the same Strava API app as the Client ID below.</p>' +
+      '<label for="refresh-token">Refresh token</label>' +
+      '<input id="refresh-token" autocomplete="off" autocapitalize="off" spellcheck="false"></details>';
 
   var config = {
     sports: options.sports,

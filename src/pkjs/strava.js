@@ -129,6 +129,29 @@ function getAccessToken(callback) {
   });
 }
 
+// Connects with a refresh token the user created themselves (e.g. with curl),
+// for when the login page does not work inside the Pebble app.
+function connectWithRefreshToken(refreshToken, callback) {
+  var previous = store.getTokens();
+  store.saveTokens({ refreshToken: refreshToken, accessToken: '', expiresAt: 0, athlete: '' });
+  getAccessToken(function (err, token) {
+    if (err) {
+      store.saveTokens(previous);
+      return callback(new Error('That refresh token did not work: ' + err.message));
+    }
+    request('GET', API + '/athlete', {
+      headers: { Authorization: 'Bearer ' + token }
+    }, function (err, athlete) {
+      var tokens = store.getTokens();
+      if (!err && athlete) {
+        tokens.athlete = [athlete.firstname, athlete.lastname].filter(Boolean).join(' ');
+        store.saveTokens(tokens);
+      }
+      callback(null, tokens);
+    });
+  });
+}
+
 function disconnect(callback) {
   var tokens = store.getTokens();
   store.saveTokens(null);
@@ -296,6 +319,7 @@ module.exports = {
   SCOPE: SCOPE,
   authorizeUrl: authorizeUrl,
   exchangeCode: exchangeCode,
+  connectWithRefreshToken: connectWithRefreshToken,
   disconnect: disconnect,
   upload: upload,
   buildTcx: buildTcx,
