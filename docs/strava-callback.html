@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Workout to Strava</title>
+  <style>
+    :root { --bg: #f4f4f5; --text: #18181b; --muted: #71717a; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #09090b; --text: #fafafa; --muted: #a1a1aa; } }
+    body { margin: 0; padding: 32px 16px; background: var(--bg); color: var(--text);
+           font: 16px/1.4 -apple-system, system-ui, sans-serif; text-align: center; }
+    p { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <h1>Returning to Pebble…</h1>
+  <p id="message">If nothing happens, close this page and open the app settings again.</p>
+  <script>
+    // Strava redirects here after login. This page holds no secrets: it only
+    // hands the one-time code back to the Pebble app, which exchanges it.
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var result = {
+        action: 'oauth',
+        code: params.get('code'),
+        scope: params.get('scope'),
+        state: params.get('state'),
+        error: params.get('error')
+      };
+      if (result.error) {
+        document.getElementById('message').textContent = 'Strava login was cancelled.';
+      }
+      window.location.href = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(result));
+    })();
+  </script>
+</body>
+</html>

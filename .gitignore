@@ -1,0 +1,5 @@
+build/
+node_modules/
+.lock-waf*
+*.pbw
+src/c/sport_types.auto.h
