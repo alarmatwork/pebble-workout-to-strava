@@ -96,6 +96,7 @@ Heart rate is one reading per minute, because that is what Pebble Health stores.
 | `src/c/main.c` | Watch UI: workout list, sport type picker, upload progress |
 | `src/c/workouts.c` | Reads workouts and per-minute data from Pebble Health |
 | `src/c/comm.c` | Sends workout data to the phone, receives settings and status |
+| `src/c/ui.c` | Menu drawing with larger fonts |
 | `src/c/settings.c` | Favorites and defaults cached on the watch |
 | `src/common/session_cache.c` | Keeps workouts after the watch drops them at midnight |
 | `worker_src/c/worker.c` | Background worker that fills the session cache |

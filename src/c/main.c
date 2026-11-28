@@ -3,6 +3,7 @@
 #include "settings.h"
 #include "sports.h"
 #include "workouts.h"
+#include "ui.h"
 
 // ---------------------------------------------------------------------------
 // Shared state
@@ -67,15 +68,19 @@ static void prv_progress_load(Window *window) {
   int inset = PBL_IF_ROUND_ELSE(24, 8);
   GRect inner = grect_inset(bounds, GEdgeInsets(PBL_IF_ROUND_ELSE(36, 12), inset, 8, inset));
 
-  s_progress_title = text_layer_create(GRect(inner.origin.x, inner.origin.y, inner.size.w, 32));
-  text_layer_set_font(s_progress_title, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  bool large = PBL_DISPLAY_WIDTH >= 200;
+  int title_h = large ? 38 : 32;
+  s_progress_title = text_layer_create(GRect(inner.origin.x, inner.origin.y, inner.size.w, title_h));
+  text_layer_set_font(s_progress_title,
+                      fonts_get_system_font(large ? FONT_KEY_GOTHIC_28_BOLD : FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_alignment(s_progress_title, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
   text_layer_set_text(s_progress_title, s_progress_title_buf);
   layer_add_child(root, text_layer_get_layer(s_progress_title));
 
   s_progress_text = text_layer_create(
-      GRect(inner.origin.x, inner.origin.y + 36, inner.size.w, inner.size.h - 36));
-  text_layer_set_font(s_progress_text, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+      GRect(inner.origin.x, inner.origin.y + title_h, inner.size.w, inner.size.h - title_h));
+  text_layer_set_font(s_progress_text,
+                      fonts_get_system_font(large ? FONT_KEY_GOTHIC_24_BOLD : FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_progress_text, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
   text_layer_set_overflow_mode(s_progress_text, GTextOverflowModeWordWrap);
   text_layer_set_text(s_progress_text, s_progress_buf);
@@ -135,7 +140,11 @@ static uint16_t prv_all_rows(MenuLayer *menu, uint16_t section, void *ctx) {
 }
 
 static void prv_all_draw(GContext *gctx, const Layer *cell, MenuIndex *index, void *ctx) {
-  menu_cell_basic_draw(gctx, cell, sports_get(index->row)->name, NULL, NULL);
+  ui_draw_row(gctx, cell, sports_get(index->row)->name, NULL);
+}
+
+static int16_t prv_all_height(MenuLayer *menu, MenuIndex *index, void *ctx) {
+  return ui_row_height(false);
 }
 
 static void prv_all_select(MenuLayer *menu, MenuIndex *index, void *ctx) {
@@ -148,8 +157,10 @@ static void prv_all_load(Window *window) {
   menu_layer_set_callbacks(s_all_menu, NULL, (MenuLayerCallbacks){
       .get_num_rows = prv_all_rows,
       .draw_row = prv_all_draw,
+      .get_cell_height = prv_all_height,
       .select_click = prv_all_select,
   });
+  ui_style_menu(s_all_menu);
   menu_layer_set_click_config_onto_window(s_all_menu, window);
   layer_add_child(root, menu_layer_get_layer(s_all_menu));
 }
@@ -197,21 +208,26 @@ static uint16_t prv_sport_rows(MenuLayer *menu, uint16_t section, void *ctx) {
 }
 
 static int16_t prv_sport_header_height(MenuLayer *menu, uint16_t section, void *ctx) {
-  return MENU_CELL_BASIC_HEADER_HEIGHT;
+  return ui_header_height();
 }
 
 static void prv_sport_draw_header(GContext *gctx, const Layer *cell, uint16_t section, void *ctx) {
-  menu_cell_basic_header_draw(gctx, cell, s_sport_header);
+  ui_draw_header(gctx, cell, s_sport_header);
 }
 
 static void prv_sport_draw(GContext *gctx, const Layer *cell, MenuIndex *index, void *ctx) {
   if (index->row >= s_sport_row_count) {
-    menu_cell_basic_draw(gctx, cell, "More types...", NULL, NULL);
+    ui_draw_row(gctx, cell, "More types...", NULL);
     return;
   }
   int sport = s_sport_rows[index->row];
   const char *subtitle = (sport == s_sport_default) ? "Default" : NULL;
-  menu_cell_basic_draw(gctx, cell, sports_get(sport)->name, subtitle, NULL);
+  ui_draw_row(gctx, cell, sports_get(sport)->name, subtitle);
+}
+
+static int16_t prv_sport_height(MenuLayer *menu, MenuIndex *index, void *ctx) {
+  bool is_default = index->row < s_sport_row_count && s_sport_rows[index->row] == s_sport_default;
+  return ui_row_height(is_default);
 }
 
 static void prv_sport_select(MenuLayer *menu, MenuIndex *index, void *ctx) {
@@ -230,8 +246,10 @@ static void prv_sport_load(Window *window) {
       .get_header_height = prv_sport_header_height,
       .draw_header = prv_sport_draw_header,
       .draw_row = prv_sport_draw,
+      .get_cell_height = prv_sport_height,
       .select_click = prv_sport_select,
   });
+  ui_style_menu(s_sport_menu);
   menu_layer_set_click_config_onto_window(s_sport_menu, window);
   layer_add_child(root, menu_layer_get_layer(s_sport_menu));
 }
@@ -271,17 +289,17 @@ static uint16_t prv_list_rows(MenuLayer *menu, uint16_t section, void *ctx) {
 }
 
 static int16_t prv_list_header_height(MenuLayer *menu, uint16_t section, void *ctx) {
-  return MENU_CELL_BASIC_HEADER_HEIGHT;
+  return ui_header_height();
 }
 
 static void prv_list_draw_header(GContext *gctx, const Layer *cell, uint16_t section, void *ctx) {
-  menu_cell_basic_header_draw(gctx, cell,
+  ui_draw_header(gctx, cell,
       settings_get()->strava_connected ? "Recent workouts" : "Not set up");
 }
 
 static void prv_list_draw(GContext *gctx, const Layer *cell, MenuIndex *index, void *ctx) {
   if (s_workout_count == 0) {
-    menu_cell_basic_draw(gctx, cell, "No workouts", "in the last 7 days", NULL);
+    ui_draw_row(gctx, cell, "No workouts", "in the last 7 days");
     return;
   }
   const Workout *w = &s_workouts[index->row];
@@ -292,7 +310,11 @@ static void prv_list_draw(GContext *gctx, const Layer *cell, MenuIndex *index, v
   strftime(when, sizeof(when), clock_is_24h_style() ? "%a %d %b %H:%M" : "%a %d %b %I:%M%p",
            localtime(&w->start));
   snprintf(subtitle, sizeof(subtitle), "%s%s", w->exported ? "Sent * " : "", when);
-  menu_cell_basic_draw(gctx, cell, title, subtitle, NULL);
+  ui_draw_row(gctx, cell, title, subtitle);
+}
+
+static int16_t prv_list_height(MenuLayer *menu, MenuIndex *index, void *ctx) {
+  return ui_row_height(true);
 }
 
 static void prv_list_select(MenuLayer *menu, MenuIndex *index, void *ctx) {
@@ -311,11 +333,13 @@ static void prv_list_load(Window *window) {
       .get_header_height = prv_list_header_height,
       .draw_header = prv_list_draw_header,
       .draw_row = prv_list_draw,
+      .get_cell_height = prv_list_height,
       .select_click = prv_list_select,
   });
 #if defined(PBL_COLOR)
   menu_layer_set_highlight_colors(s_list_menu, GColorOrange, GColorWhite);
 #endif
+  ui_style_menu(s_list_menu);
   menu_layer_set_click_config_onto_window(s_list_menu, window);
   layer_add_child(root, menu_layer_get_layer(s_list_menu));
 }

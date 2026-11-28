@@ -1,8 +1,10 @@
 {
   "name": "pebble-workout-to-strava",
   "author": "Alar Mäerand",
-  "version": "0.4.0",
-  "keywords": ["pebble-app"],
+  "version": "0.5.0",
+  "keywords": [
+    "pebble-app"
+  ],
   "private": true,
   "dependencies": {},
   "pebble": {
@@ -18,9 +20,20 @@
       "flint",
       "gabbro"
     ],
-    "capabilities": ["health", "configurable"],
+    "capabilities": [
+      "health",
+      "configurable"
+    ],
     "usesPermissions": [
-      { "name": "Internet", "parameters": { "domains": ["intervals.icu", "www.strava.com"] } }
+      {
+        "name": "Internet",
+        "parameters": {
+          "domains": [
+            "intervals.icu",
+            "www.strava.com"
+          ]
+        }
+      }
     ],
     "watchapp": {
       "watchface": false
@@ -46,7 +59,14 @@
       "StatusText"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MENU_ICON",
+          "file": "images/menu_icon.png",
+          "menuIcon": true
+        }
+      ]
     }
   }
 }
