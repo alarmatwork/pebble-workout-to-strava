@@ -53,7 +53,12 @@ def build(ctx):
         ctx.set_group(ctx.env.PLATFORM_NAME)
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
         ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf, bin_type='app')
-        binaries.append({'platform': platform, 'app_elf': app_elf})
+        # The worker saves Pebble Health sessions in the background (see
+        # src/common/session_cache.h).
+        worker_elf = '{}/pebble-worker.elf'.format(ctx.env.BUILD_DIR)
+        ctx.pbl_build(source=ctx.path.ant_glob('worker_src/c/**/*.c'), target=worker_elf,
+                      bin_type='worker')
+        binaries.append({'platform': platform, 'app_elf': app_elf, 'worker_elf': worker_elf})
     ctx.env = cached_env
 
     ctx.set_group('bundle')

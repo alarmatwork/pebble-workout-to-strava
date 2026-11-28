@@ -18,6 +18,13 @@ you pick in the app's settings.
 
 The watch keeps per-minute history for about a week, so export within a few days.
 
+Pebble Health only tells apps about **today's** workouts; at midnight the watch
+forgets earlier sessions. So Workout Export runs a small background worker that
+copies each day's workouts to storage every 5 minutes. It starts the first time
+you open the app. Workouts recorded before that, on an earlier day, can't be
+listed. A watch runs one background worker at a time, so if another app's worker
+is running, the watch asks which one to keep.
+
 ## Install
 
 Download the latest `.pbw` from
@@ -90,6 +97,8 @@ Heart rate is one reading per minute, because that is what Pebble Health stores.
 | `src/c/workouts.c` | Reads workouts and per-minute data from Pebble Health |
 | `src/c/comm.c` | Sends workout data to the phone, receives settings and status |
 | `src/c/settings.c` | Favorites and defaults cached on the watch |
+| `src/common/session_cache.c` | Keeps workouts after the watch drops them at midnight |
+| `worker_src/c/worker.c` | Background worker that fills the session cache |
 | `src/pkjs/index.js` | Phone side: message handling, settings, upload flow |
 | `src/pkjs/intervals.js` | intervals.icu upload |
 | `src/pkjs/strava.js` | Strava OAuth and upload |

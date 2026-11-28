@@ -352,6 +352,10 @@ static void prv_on_settings(void) {
 int main(void) {
   settings_load();
   comm_init(prv_on_settings);
+  // The worker keeps a copy of each day's workouts (see session_cache.h).
+  if (!app_worker_is_running()) {
+    app_worker_launch();
+  }
   prv_push_list_window();
   app_event_loop();
   comm_cancel_upload();

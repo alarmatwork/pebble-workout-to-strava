@@ -1,36 +1,39 @@
 #include "workouts.h"
+#include "../common/session_cache.h"
 
 #define EXPORTED_KEY 10
 #define EXPORTED_MAX 60  // 240 bytes, fits in one persist value (256 max)
 #define HISTORY_CHUNK 60
 
-typedef struct {
-  Workout *out;
-  int max;
-  int count;
-} LoadContext;
-
-static bool prv_activity_cb(HealthActivity activity, time_t start, time_t end, void *context) {
-  LoadContext *ctx = context;
-  if (end - start >= WORKOUT_MIN_SECONDS) {
-    ctx->out[ctx->count++] = (Workout){
-      .start = start,
-      .end = end,
-      .activity = activity,
-      .exported = workouts_is_exported(start),
-    };
+static HealthActivity prv_activity(uint8_t code) {
+  switch (code) {
+    case 1: return HealthActivityRun;
+    case 2: return HealthActivityWalk;
+    default: return HealthActivityOpenWorkout;
   }
-  return ctx->count < ctx->max;
 }
 
 int workouts_load(Workout *out, int max) {
-  time_t now = time(NULL);
-  LoadContext ctx = {.out = out, .max = max, .count = 0};
-  health_service_activities_iterate(
-      HealthActivityRun | HealthActivityWalk | HealthActivityOpenWorkout,
-      now - WORKOUT_LOOKBACK_DAYS * SECONDS_PER_DAY, now, HealthIterationDirectionPast,
-      prv_activity_cb, &ctx);
-  return ctx.count;
+  // Pebble Health only reports today's sessions, so read them through the
+  // cache, which the background worker also fills.
+  session_cache_snapshot();
+  static CachedSession sessions[SESSION_CACHE_MAX];
+  int total = session_cache_load(sessions, SESSION_CACHE_MAX);
+  time_t oldest = time(NULL) - WORKOUT_LOOKBACK_DAYS * SECONDS_PER_DAY;
+  int count = 0;
+  for (int i = 0; i < total && count < max; i++) {
+    const CachedSession *s = &sessions[i];
+    if ((time_t)s->start < oldest || s->minutes * 60 < WORKOUT_MIN_SECONDS) {
+      continue;
+    }
+    out[count++] = (Workout){
+        .start = (time_t)s->start,
+        .end = (time_t)s->start + s->minutes * 60,
+        .activity = prv_activity(s->code),
+        .exported = workouts_is_exported((time_t)s->start),
+    };
+  }
+  return count;
 }
 
 const char *workouts_activity_name(HealthActivity activity) {
