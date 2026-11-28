@@ -16,7 +16,7 @@ typedef enum {
   PhaseBegin,
   PhaseChunks,
   PhaseEnd,
-  PhaseWaiting,  // all data sent, waiting for Strava result from the phone
+  PhaseWaiting,  // all data sent, waiting for the upload result from the phone
 } Phase;
 
 static struct {
@@ -123,7 +123,7 @@ static void prv_outbox_sent(DictionaryIterator *iter, void *context) {
       break;
     case PhaseEnd:
       s_upload.phase = PhaseWaiting;
-      prv_report("Uploading to Strava...");
+      prv_report("Uploading...");
       s_upload.timer = app_timer_register(PHONE_TIMEOUT_MS, prv_timeout_cb, NULL);
       return;
     default:
@@ -221,7 +221,7 @@ bool comm_start_upload(const Workout *workout, const char *sport_id, CommStatusH
 
 void comm_cancel_upload(void) {
   s_upload.on_status = NULL;
-  // While waiting for Strava, keep listening so a late "done" still marks
+  // While waiting for the upload, keep listening so a late "done" still marks
   // the workout as exported.
   if (s_upload.phase != PhaseIdle && s_upload.phase != PhaseWaiting) {
     if (s_upload.timer) {

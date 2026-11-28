@@ -3,6 +3,9 @@
 var DEFAULT_CALLBACK_URL = 'https://alarmatwork.github.io/pebble-workout-to-strava/strava-callback.html';
 
 var DEFAULT_SETTINGS = {
+  destination: 'intervals',  // 'intervals' (intervals.icu) or 'strava'
+  intervalsApiKey: '',
+  intervalsAthlete: '',
   clientId: '',
   clientSecret: '',
   callbackUrl: DEFAULT_CALLBACK_URL,

@@ -82,8 +82,21 @@ var PAGE_SCRIPT = function () {
     });
   }
 
+  function destination() {
+    var checked = document.querySelector('input[name="destination"]:checked');
+    return checked ? checked.value : 'intervals';
+  }
+
+  function showDestination() {
+    var strava = destination() === 'strava';
+    $('strava-only').style.display = strava ? '' : 'none';
+    $('api').style.display = strava ? '' : 'none';
+    $('intervals-only').style.display = strava ? 'none' : '';
+  }
+
   function collect() {
     var settings = {
+      destination: destination(),
       favorites: favorites.slice(),
       defaults: { run: $('def-run').value, walk: $('def-walk').value, workout: $('def-workout').value },
       clientId: $('client-id').value.trim(),
@@ -91,6 +104,8 @@ var PAGE_SCRIPT = function () {
     };
     var secret = $('client-secret').value.trim();
     if (secret) settings.clientSecret = secret;
+    var intervalsKey = $('intervals-key') ? $('intervals-key').value.trim() : '';
+    if (intervalsKey) settings.intervalsApiKey = intervalsKey;
     var refreshToken = $('refresh-token') ? $('refresh-token').value.trim() : '';
     if (refreshToken) settings.refreshToken = refreshToken;
     return settings;
@@ -130,9 +145,17 @@ var PAGE_SCRIPT = function () {
   $('search').oninput = renderAvailable;
   ['client-id', 'client-secret', 'callback-url'].forEach(function (id) { $(id).oninput = updateConnect; });
 
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="destination"]'), function (radio) {
+    radio.checked = radio.value === (data.settings.destination || 'intervals');
+    radio.onchange = showDestination;
+  });
+  showDestination();
   renderFavorites();
   renderAvailable();
   updateConnect();
+  if ($('intervals-remove')) {
+    $('intervals-remove').onclick = function () { close({ action: 'intervals-remove', settings: collect() }); };
+  }
 
   $('save').onclick = function () { close({ action: 'save', settings: collect() }); };
 
@@ -182,7 +205,9 @@ var STYLE = [
   'label{display:block;margin:10px 0 4px;font-size:14px;color:var(--muted)}',
   'input,select{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}',
   'ol{padding-left:20px;margin:8px 0}ol li{display:list-item;border:0;padding:2px 0}',
-  'code{font-size:13px;word-break:break-all}'
+  'code{font-size:13px;word-break:break-all}',
+  'label.choice{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:16px;color:var(--text)}',
+  'label.choice input{width:auto}'
 ].join('\n');
 
 function escapeHtml(text) {
@@ -206,19 +231,35 @@ function build(options) {
       '<label for="refresh-token">Refresh token</label>' +
       '<input id="refresh-token" autocomplete="off" autocapitalize="off" spellcheck="false"></details>';
 
+  var intervalsAccount = options.hasIntervalsKey
+    ? '<p>Connected' + (options.settings.intervalsAthlete
+        ? ' as <b>' + escapeHtml(options.settings.intervalsAthlete) + '</b>' : '') + '.</p>' +
+      '<button type="button" id="intervals-remove">Remove API key</button>'
+    : '<ol class="muted"><li>On intervals.icu, open <b>Settings</b>.</li>' +
+      '<li>Near the bottom, under <b>Developer Settings</b>, copy your <b>API key</b>.</li>' +
+      '<li>Paste it here and tap Save.</li></ol>' +
+      '<label for="intervals-key">API key</label>' +
+      '<input id="intervals-key" autocomplete="off" autocapitalize="off" spellcheck="false">';
+
   var config = {
     sports: options.sports,
     settings: options.settings,
     hasSecret: options.hasSecret,
+    hasIntervalsKey: options.hasIntervalsKey,
     nonce: options.nonce,
     scope: options.scope
   };
 
   var html = '<!doctype html><html><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<title>Workout to Strava</title><style>' + STYLE + '</style></head><body>' +
-    '<h1>Workout to Strava</h1>' +
-    '<section><h2>Strava account</h2>' + account + '</section>' +
+    '<title>Workout Export</title><style>' + STYLE + '</style></head><body>' +
+    '<h1>Workout Export</h1>' +
+    '<section><h2>Upload to</h2>' +
+    '<label class="choice"><input type="radio" name="destination" value="intervals"> intervals.icu</label>' +
+    '<label class="choice"><input type="radio" name="destination" value="strava"> Strava ' +
+    '<span class="muted">(needs a Strava subscription)</span></label></section>' +
+    '<section id="intervals-only"><h2>intervals.icu</h2>' + intervalsAccount + '</section>' +
+    '<div id="strava-only"><section><h2>Strava account</h2>' + account + '</section></div>' +
     '<section><h2>Favorite sport types</h2>' +
     '<p class="muted">Shown on the watch in this order.</p><ul id="favorites"></ul></section>' +
     '<section><h2>Add sport types</h2><input id="search" type="search" placeholder="Search">' +
@@ -227,7 +268,7 @@ function build(options) {
     '<label for="def-run">Pebble Run</label><select id="def-run"></select>' +
     '<label for="def-walk">Pebble Walk</label><select id="def-walk"></select>' +
     '<label for="def-workout">Pebble Open Workout</label><select id="def-workout"></select></section>' +
-    '<details id="api"><summary>Strava API app</summary>' +
+    '<details id="api" class="strava-extra"><summary>Strava API app</summary>' +
     '<ol class="muted"><li>Open <code>strava.com/settings/api</code> and create an app.</li>' +
     '<li>Set <b>Authorization Callback Domain</b> to <code id="callback-domain"></code>.</li>' +
     '<li>Copy the Client ID and Client Secret here and save.</li></ol>' +

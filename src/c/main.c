@@ -47,7 +47,7 @@ static void prv_on_status(CommStatus status, const char *text) {
   }
   switch (status) {
     case CommStatusDone:
-      snprintf(s_progress_buf, sizeof(s_progress_buf), "Uploaded to Strava!\n\n%s", text);
+      snprintf(s_progress_buf, sizeof(s_progress_buf), "Uploaded!\n\n%s", text);
       vibes_short_pulse();
       break;
     case CommStatusError:
@@ -119,7 +119,7 @@ static void prv_start_upload(int sport_index) {
   app_timer_register(0, prv_remove_sport_windows, NULL);
 
   if (!settings_get()->strava_connected) {
-    prv_on_status(CommStatusError, "Strava is not connected. Open the app settings in the Pebble phone app.");
+    prv_on_status(CommStatusError, "Not set up yet. Open the app settings in the Pebble phone app.");
     return;
   }
   comm_start_upload(&s_selected, sport->id, prv_on_status);
@@ -276,7 +276,7 @@ static int16_t prv_list_header_height(MenuLayer *menu, uint16_t section, void *c
 
 static void prv_list_draw_header(GContext *gctx, const Layer *cell, uint16_t section, void *ctx) {
   menu_cell_basic_header_draw(gctx, cell,
-      settings_get()->strava_connected ? "Recent workouts" : "Strava not connected");
+      settings_get()->strava_connected ? "Recent workouts" : "Not set up");
 }
 
 static void prv_list_draw(GContext *gctx, const Layer *cell, MenuIndex *index, void *ctx) {

@@ -1,12 +1,12 @@
 {
   "name": "pebble-workout-to-strava",
   "author": "Alar Mäerand",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "keywords": ["pebble-app"],
   "private": true,
   "dependencies": {},
   "pebble": {
-    "displayName": "Workout to Strava",
+    "displayName": "Workout Export",
     "uuid": "9d2c6d1a-ed46-4cc8-96f9-e9591143596c",
     "sdkVersion": "3",
     "enableMultiJS": true,
@@ -20,7 +20,7 @@
     ],
     "capabilities": ["health", "configurable"],
     "usesPermissions": [
-      { "name": "Internet", "parameters": { "domains": ["www.strava.com"] } }
+      { "name": "Internet", "parameters": { "domains": ["intervals.icu", "www.strava.com"] } }
     ],
     "watchapp": {
       "watchface": false

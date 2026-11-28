@@ -1,8 +1,11 @@
-// Phone side of Workout to Strava (PebbleKit JS).
+// Phone side of Workout to Strava (PebbleKit JS). Uploads go to intervals.icu
+// or Strava, whichever is chosen in the settings.
 // Protocol with the watch: see src/c/comm.h.
 
 var store = require('./store');
 var strava = require('./strava');
+var intervals = require('./intervals');
+var tcx = require('./tcx');
 var configPage = require('./config_page');
 var SPORTS = require('./sport_types.json');
 
@@ -41,6 +44,14 @@ function sendNext() {
   });
 }
 
+// The watch's "connected" flag means "the chosen destination is set up".
+function isConnected(settings, tokens) {
+  if (settings.destination === 'strava') {
+    return !!(tokens && tokens.refreshToken);
+  }
+  return !!settings.intervalsApiKey;
+}
+
 function sendSettings() {
   var settings = store.getSettings();
   var tokens = store.getTokens();
@@ -49,7 +60,7 @@ function sendSettings() {
     DefaultRun: settings.defaults.run,
     DefaultWalk: settings.defaults.walk,
     DefaultWorkout: settings.defaults.workout,
-    StravaConnected: tokens && tokens.refreshToken ? 1 : 0
+    StravaConnected: isConnected(settings, tokens) ? 1 : 0
   });
 }
 
@@ -101,19 +112,30 @@ function uploadWorkout(workout) {
     workout.heartRates[i] = workout.heartRates[i] || 0;
     workout.steps[i] = workout.steps[i] || 0;
   }
-  var name = sportNames[workout.sportType] || workout.sportType;
-  strava.upload(workout, name, function (text) {
+  var settings = store.getSettings();
+  var name = tcx.activityName(workout.start, sportNames[workout.sportType] || workout.sportType);
+  var useStrava = settings.destination === 'strava';
+  var target = useStrava ? 'Strava' : 'intervals.icu';
+  var onProgress = function (text) {
     sendStatus(STATUS_PROGRESS, text);
-  }, function (err, result) {
+  };
+  var done = function (err, result) {
     if (err) {
       console.log('Upload failed: ' + err.message);
       sendStatus(STATUS_ERROR, err.message);
     } else if (result.duplicate) {
-      sendStatus(STATUS_DONE, 'It was already on Strava.');
+      sendStatus(STATUS_DONE, 'It was already on ' + target + '.');
     } else {
-      sendStatus(STATUS_DONE, strava.activityName(workout.start, name));
+      sendStatus(STATUS_DONE, name + ' is on ' + target + '.');
     }
-  });
+  };
+  if (useStrava) {
+    strava.upload(workout, name, onProgress, done);
+  } else if (!settings.intervalsApiKey) {
+    done(new Error('Add your intervals.icu API key in the app settings.'));
+  } else {
+    intervals.upload(settings.intervalsApiKey, workout, name, onProgress, done);
+  }
 }
 
 // --- Settings page ----------------------------------------------------------
@@ -133,6 +155,9 @@ function applySettings(update) {
         settings.defaults[key] = update.defaults[key];
       }
     });
+  }
+  if (update.destination === 'intervals' || update.destination === 'strava') {
+    settings.destination = update.destination;
   }
   if (update.clientId !== undefined) {
     settings.clientId = update.clientId;
@@ -197,6 +222,8 @@ Pebble.addEventListener('showConfiguration', function () {
   var nonce = randomNonce();
   store.write('oauthNonce', nonce);
   var publicSettings = {
+    destination: settings.destination,
+    intervalsAthlete: settings.intervalsAthlete,
     clientId: settings.clientId,
     callbackUrl: settings.callbackUrl,
     favorites: settings.favorites,
@@ -206,6 +233,7 @@ Pebble.addEventListener('showConfiguration', function () {
     sports: SPORTS,
     settings: publicSettings,
     hasSecret: !!settings.clientSecret,
+    hasIntervalsKey: !!settings.intervalsApiKey,
     connected: !!(tokens && tokens.refreshToken),
     athlete: tokens && tokens.athlete,
     nonce: nonce,
@@ -237,6 +265,26 @@ Pebble.addEventListener('webviewclosed', function (e) {
   }
   if (result.action === 'disconnect') {
     strava.disconnect(sendSettings);
+  } else if (result.action === 'intervals-remove') {
+    var cleared = store.getSettings();
+    cleared.intervalsApiKey = '';
+    cleared.intervalsAthlete = '';
+    store.saveSettings(cleared);
+    sendSettings();
+  } else if (result.settings && result.settings.intervalsApiKey) {
+    var key = result.settings.intervalsApiKey;
+    intervals.verify(key, function (err, athlete) {
+      if (err) {
+        notify('intervals.icu', err.message);
+      } else {
+        var settings = store.getSettings();
+        settings.intervalsApiKey = key;
+        settings.intervalsAthlete = athlete;
+        store.saveSettings(settings);
+        notify('intervals.icu', 'Connected' + (athlete ? ' as ' + athlete : '') + '.');
+      }
+      sendSettings();
+    });
   } else if (result.settings && result.settings.refreshToken) {
     strava.connectWithRefreshToken(result.settings.refreshToken, function (err, tokens) {
       if (err) {
