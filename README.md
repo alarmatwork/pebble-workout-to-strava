@@ -28,7 +28,7 @@ is running, the watch asks which one to keep.
 ## Install
 
 Download the latest `.pbw` from
-[Releases](https://github.com/alarmatwork/pebble-workout-to-strava/releases)
+[Releases](https://github.com/alarmatwork/pebble-workout-export/releases)
 on your phone and open it with the Pebble app. Or build it yourself with the
 [Pebble SDK](https://developer.repebble.com/sdk/):
 
@@ -59,7 +59,7 @@ Without one, every request fails with `403 Application Status Inactive`.
    [`docs/strava-callback.html`](docs/strava-callback.html) hands the one-time
    login code to the Pebble app and holds no secrets. It's served by GitHub Pages
    (**Settings → Pages → `main` / `/docs`**) at
-   `https://alarmatwork.github.io/pebble-workout-to-strava/strava-callback.html`,
+   `https://alarmatwork.github.io/pebble-workout-export/strava-callback.html`,
    the app's default callback URL.
 2. **Strava API app.** At [strava.com/settings/api](https://www.strava.com/settings/api),
    create an app and set **Authorization Callback Domain** to `alarmatwork.github.io`.

@@ -1,6 +1,6 @@
 // Settings and Strava tokens, kept in the Pebble phone app's localStorage.
 
-var DEFAULT_CALLBACK_URL = 'https://alarmatwork.github.io/pebble-workout-to-strava/strava-callback.html';
+var DEFAULT_CALLBACK_URL = 'https://alarmatwork.github.io/pebble-workout-export/strava-callback.html';
 
 var DEFAULT_SETTINGS = {
   destination: 'intervals',  // 'intervals' (intervals.icu) or 'strava'

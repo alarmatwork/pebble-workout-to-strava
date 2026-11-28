@@ -1,4 +1,4 @@
-// Phone side of Workout to Strava (PebbleKit JS). Uploads go to intervals.icu
+// Phone side of Workout Export (PebbleKit JS). Uploads go to intervals.icu
 // or Strava, whichever is chosen in the settings.
 // Protocol with the watch: see src/c/comm.h.
 
