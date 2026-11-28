@@ -31,7 +31,7 @@ Download the latest `.pbw` from
 [Releases](https://github.com/alarmatwork/pebble-workout-export/releases)
 on your phone and open it with the Pebble app. (The Pebble phone app shows icons
 only for app store apps, so it lists this one with a generic icon; the watch
-shows the kettlebell icon.) Or build it yourself with the
+shows the runner icon.) Or build it yourself with the
 [Pebble SDK](https://developer.repebble.com/sdk/):
 
 ```sh
